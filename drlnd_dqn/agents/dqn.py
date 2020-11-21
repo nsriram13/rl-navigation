@@ -19,10 +19,10 @@ UPDATE_EVERY = 4  # how often to update the network
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-class DQNAgent:
+class Agent:
     """Interacts with and learns from the environment."""
 
-    def __init__(self, state_size, action_size, seed):
+    def __init__(self, state_size, action_size, seed, double=False):
         """Initialize an Agent object.
 
         Params
@@ -30,10 +30,12 @@ class DQNAgent:
             state_size (int): dimension of each state
             action_size (int): dimension of each action
             seed (int): random seed
+            double (bool): Use double DQN if True, else use a vanilla DQN
         """
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(seed)
+        self.double = double
 
         # Q-Network
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
@@ -87,10 +89,22 @@ class DQNAgent:
         """
         states, actions, rewards, next_states, dones = experiences
 
-        # Get max predicted Q values (for next states) from target model
-        Q_targets_next = (
-            self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
-        )
+        if self.double:
+            # Get the best action as predicted by the W- set of weights
+            best_actions_idx = (
+                self.qnetwork_local(next_states).detach().argmax(1).unsqueeze(1)
+            )
+            # Select the Q Value for the action selected in the previous step
+            # from the network with W set of weights (target model)
+            Q_targets_next = (
+                self.qnetwork_target(next_states).gather(1, best_actions_idx).detach()
+            )
+        else:
+            # Get max predicted Q values (for next states) from target model
+            Q_targets_next = (
+                self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
+            )
+
         # Compute Q targets for current states
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
 
@@ -107,7 +121,8 @@ class DQNAgent:
         # ------------------- update target network ------------------- #
         self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)
 
-    def soft_update(self, local_model, target_model, tau):
+    @staticmethod
+    def soft_update(local_model, target_model, tau):
         """Soft update model parameters.
         θ_target = τ*θ_local + (1 - τ)*θ_target
 
