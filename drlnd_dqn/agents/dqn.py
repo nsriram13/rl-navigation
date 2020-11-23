@@ -47,6 +47,11 @@ class Agent:
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
 
+        if self.double:
+            self._algorithm = 'Double DQN'
+        else:
+            self._algorithm = 'DQN'
+
     def step(self, state, action, reward, next_state, done):
         # Save experience in replay memory
         self.memory.add(state, action, reward, next_state, done)
@@ -138,3 +143,7 @@ class Agent:
             target_param.data.copy_(
                 tau * local_param.data + (1.0 - tau) * target_param.data
             )
+
+    @property
+    def algorithm(self):
+        return self._algorithm
