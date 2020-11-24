@@ -6,6 +6,8 @@ collect yellow bananas while avoiding blue bananas. We use a
 based environment provided by Udacity for this exercise. More details
 about the environment is provided below.
 
+![Agent trained](https://user-images.githubusercontent.com/5950690/100053043-15fab280-2dd4-11eb-906f-2dc2df7846c8.gif)
+
 #### State space
 The state space has 37 dimensions and contains the agent's velocity,
 along with ray-based perception of objects around the agent's
